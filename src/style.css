@@ -29,15 +29,18 @@
     --grain-opacity: 0.05;
   }
 
-  html {
-    scroll-behavior: smooth;
-  }
-
-  body {
+  html, body {
+    margin: 0;
+    padding: 0;
     font-family: 'Noto Sans SC', sans-serif;
     background-color: var(--bg-primary);
     color: var(--text-primary);
     transition: background-color 0.5s ease, color 0.5s ease;
+    scroll-behavior: smooth;
+    min-height: 100vh;
+  }
+
+  #app {
     min-height: 100vh;
   }
 }

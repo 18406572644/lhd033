@@ -1,19 +1,27 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 import { usePrintLayoutStore } from '@/stores/printLayout'
 import { usePrintLayout } from '@/composables/usePrintLayout'
 import { mmToPx } from '@/lib/unitConversion'
 import ImageItem from './ImageItem.vue'
+import CropOverlay from './CropOverlay.vue'
 import { Move, ZoomIn, ZoomOut } from 'lucide-vue-next'
 
 const store = usePrintLayoutStore()
-const { paper, images, selectedImageIds, smartLayout, activeGuides, zoom, canvasOffset, paperPixelWidth, paperPixelHeight, contentArea } = storeToRefs(store)
+const { paper, images, selectedImageIds, smartLayout, activeGuides, zoom, canvasOffset, paperPixelWidth, paperPixelHeight, contentArea, isCropping, croppingImageId } = storeToRefs(store)
+
+const croppingImage = computed(() => {
+  if (!isCropping.value || !croppingImageId.value) return null
+  return images.value.find((img) => img.id === croppingImageId.value) || null
+})
 
 const canvasContainerRef = ref<HTMLDivElement | null>(null)
 const canvasWrapperRef = ref<HTMLDivElement | null>(null)
 const isPanning = ref(false)
+const isSpacePanning = ref(false)
 const panStart = ref({ x: 0, y: 0, offsetX: 0, offsetY: 0 })
+const spacePressed = ref(false)
 
 const {
   handleMouseDown,
@@ -66,7 +74,7 @@ const centerLines = computed(() => ({
   horizontal: paperPixelHeight.value / 2,
 }))
 
-function handleImageDragStart(imageId: string, handleType: string) {
+function handleImageDragStart(e: MouseEvent | TouchEvent, imageId: string, handleType: string) {
   const mappedHandle = handleType === 'move' ? 'move' :
     handleType === 'rotate' ? 'rotate' :
     handleType === 'top-left' ? 'nw' :
@@ -77,36 +85,48 @@ function handleImageDragStart(imageId: string, handleType: string) {
     handleType === 'bottom-center' ? 's' :
     handleType === 'bottom-left' ? 'sw' :
     handleType === 'middle-left' ? 'w' : 'move'
-  const fakeEvent = new MouseEvent('mousedown', { clientX: 0, clientY: 0 })
-  handleMouseDown(fakeEvent, imageId, mappedHandle)
+  handleMouseDown(e, imageId, mappedHandle)
 }
 
 function handleImageSelect(imageId: string, multiSelect: boolean) {
   store.selectImage(imageId, multiSelect)
 }
 
-function handleImageDoubleClick(imageId: string) {
-  handleDoubleClick(new MouseEvent('dblclick'), imageId)
+function handleImageDoubleClick(e: MouseEvent | TouchEvent, imageId: string) {
+  handleDoubleClick(e, imageId)
 }
 
 function handleCanvasMouseDownWrapper(e: MouseEvent) {
   const target = e.target as HTMLElement
   if (target.closest('.image-item')) return
+  if (target.closest('.crop-overlay')) return
   handleCanvasMouseDown(e)
 }
 
-function handlePanStart(e: MouseEvent) {
-  if (e.button !== 1) return
-  e.preventDefault()
+function handleCropConfirm() {
+  // 裁剪已确认，状态已在 store 中更新
+}
+
+function handleCropCancel() {
+  // 裁剪已取消，状态已在 store 中更新
+}
+
+function startPanning(clientX: number, clientY: number) {
   isPanning.value = true
   panStart.value = {
-    x: e.clientX,
-    y: e.clientY,
+    x: clientX,
+    y: clientY,
     offsetX: canvasOffset.value.x,
     offsetY: canvasOffset.value.y,
   }
   window.addEventListener('mousemove', handlePanMove)
   window.addEventListener('mouseup', handlePanEnd)
+}
+
+function handlePanStart(e: MouseEvent) {
+  if (e.button !== 1) return
+  e.preventDefault()
+  startPanning(e.clientX, e.clientY)
 }
 
 function handlePanMove(e: MouseEvent) {
@@ -118,6 +138,7 @@ function handlePanMove(e: MouseEvent) {
 
 function handlePanEnd() {
   isPanning.value = false
+  isSpacePanning.value = false
   window.removeEventListener('mousemove', handlePanMove)
   window.removeEventListener('mouseup', handlePanEnd)
 }
@@ -125,9 +146,22 @@ function handlePanEnd() {
 function handleWheel(e: WheelEvent) {
   if (!e.ctrlKey && !e.metaKey) return
   e.preventDefault()
+
+  const rect = canvasContainerRef.value?.getBoundingClientRect()
+  if (!rect) return
+
+  const mouseX = e.clientX - rect.left
+  const mouseY = e.clientY - rect.top
+
   const delta = e.deltaY > 0 ? 0.9 : 1.1
   const newZoom = Math.max(0.1, Math.min(5, zoom.value * delta))
+
+  const scaleRatio = newZoom / zoom.value
+  const newOffsetX = mouseX - (mouseX - canvasOffset.value.x) * scaleRatio
+  const newOffsetY = mouseY - (mouseY - canvasOffset.value.y) * scaleRatio
+
   store.setZoom(newZoom)
+  store.setCanvasOffset(newOffsetX, newOffsetY)
 }
 
 function fitToWindow() {
@@ -145,8 +179,41 @@ function fitToWindow() {
 }
 
 function handleKeyDownWrapper(e: KeyboardEvent) {
-  if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+  if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+    if (e.key === 'Escape') {
+      ;(e.target as HTMLElement).blur()
+    }
+    return
+  }
+
+  if (e.code === 'Space' && !spacePressed.value) {
+    e.preventDefault()
+    spacePressed.value = true
+  }
+
+  if (e.key === 'Escape' && isCropping.value) {
+    store.stopCropping()
+    return
+  }
+
   handleKeyDown(e)
+}
+
+function handleKeyUpWrapper(e: KeyboardEvent) {
+  if (e.code === 'Space') {
+    spacePressed.value = false
+    if (isSpacePanning.value) {
+      handlePanEnd()
+    }
+  }
+}
+
+function handleCanvasMouseDownForPan(e: MouseEvent) {
+  if (spacePressed.value && e.button === 0) {
+    e.preventDefault()
+    isSpacePanning.value = true
+    startPanning(e.clientX, e.clientY)
+  }
 }
 
 watch(
@@ -158,13 +225,17 @@ watch(
 )
 
 onMounted(() => {
-  fitToWindow()
+  nextTick(() => {
+    fitToWindow()
+  })
   window.addEventListener('keydown', handleKeyDownWrapper)
+  window.addEventListener('keyup', handleKeyUpWrapper)
   window.addEventListener('resize', fitToWindow)
 })
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDownWrapper)
+  window.removeEventListener('keyup', handleKeyUpWrapper)
   window.removeEventListener('resize', fitToWindow)
   window.removeEventListener('mousemove', handlePanMove)
   window.removeEventListener('mouseup', handlePanEnd)
@@ -177,9 +248,10 @@ defineExpose({ fitToWindow })
   <div
     ref="canvasContainerRef"
     class="layout-canvas"
-    :class="{ 'is-panning': isPanning }"
+    :class="{ 'is-panning': isPanning, 'space-pressed': spacePressed }"
     @mousedown="handleCanvasMouseDownWrapper"
     @mousedown.middle="handlePanStart"
+    @mousedown.left="handleCanvasMouseDownForPan"
     @wheel="handleWheel"
   >
     <div
@@ -264,10 +336,31 @@ defineExpose({ fitToWindow })
           :is-selected="selectedImageIds.includes(img.id)"
           :scale="zoom"
           :dpi="paper.dpi"
-          @drag-start="handleImageDragStart"
-          @double-click="handleImageDoubleClick"
+          @drag-start="(e, handleType) => handleImageDragStart(e, img.id, handleType)"
+          @double-click="(e) => handleImageDoubleClick(e, img.id)"
           @select="handleImageSelect"
         />
+
+        <template v-if="isCropping && croppingImage">
+          <div
+            class="crop-wrapper"
+            :style="{
+              position: 'absolute',
+              left: mmToPx(croppingImage.x, paper.dpi) + 'px',
+              top: mmToPx(croppingImage.y, paper.dpi) + 'px',
+              transform: `rotate(${croppingImage.rotation}deg)`,
+              transformOrigin: 'center center',
+              zIndex: 9999,
+            }"
+          >
+            <CropOverlay
+              :image="croppingImage"
+              :dpi="paper.dpi"
+              @confirm="handleCropConfirm"
+              @cancel="handleCropCancel"
+            />
+          </div>
+        </template>
 
         <div
           v-if="isSelecting && selectionBox"
@@ -290,7 +383,9 @@ defineExpose({ fitToWindow })
     <div class="canvas-hint">
       <span>Ctrl + 滚轮缩放</span>
       <span>·</span>
-      <span>中键拖拽平移</span>
+      <span>空格 + 拖拽平移</span>
+      <span>·</span>
+      <span>双击图片裁剪</span>
     </div>
   </div>
 </template>
@@ -313,6 +408,14 @@ defineExpose({ fitToWindow })
 }
 
 .layout-canvas.is-panning {
+  cursor: grabbing;
+}
+
+.layout-canvas.space-pressed {
+  cursor: grab;
+}
+
+.layout-canvas.space-pressed.is-panning {
   cursor: grabbing;
 }
 

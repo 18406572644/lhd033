@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Camera } from 'lucide-vue-next'
+import { Camera, LayoutGrid } from 'lucide-vue-next'
 import { useRoute } from 'vue-router'
 import ThemeToggle from './ThemeToggle.vue'
 

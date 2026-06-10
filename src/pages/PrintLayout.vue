@@ -378,7 +378,8 @@ onUnmounted(() => {
 .print-layout {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: calc(100vh - 64px);
+  min-height: 0;
   overflow: hidden;
   background: var(--bg-primary);
 }

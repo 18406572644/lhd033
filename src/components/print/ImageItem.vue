@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { Upload, RotateCw } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
 import { usePrintLayoutStore } from '@/stores/printLayout'
-import { useImageFilter } from '@/composables/useImageFilter'
 import { mmToPx } from '@/lib/unitConversion'
 import type { PrintImage } from '@/types'
 
@@ -15,19 +14,17 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  dragStart: [imageId: string, handleType: string]
-  doubleClick: [imageId: string]
+  dragStart: [e: MouseEvent | TouchEvent, handleType: string]
+  doubleClick: [e: MouseEvent | TouchEvent]
   select: [imageId: string, multiSelect: boolean]
 }>()
 
 const printLayoutStore = usePrintLayoutStore()
 const { isCropping, croppingImageId } = storeToRefs(printLayoutStore)
 
-const canvasRef = ref<HTMLCanvasElement | null>(null)
-const imageSrc = computed(() => props.image.src || null)
-const filterParams = computed(() => props.image.filterParams)
-
-const { isProcessing } = useImageFilter(canvasRef, imageSrc, filterParams)
+const imgRef = ref<HTMLImageElement | null>(null)
+const imageLoaded = ref(false)
+const imageError = ref(false)
 
 const handleSize = 8
 const controlPointSize = computed(() => Math.max(handleSize, handleSize / props.scale))
@@ -44,37 +41,66 @@ const imageStyle = computed(() => {
   const rotation = props.image.rotation
 
   return {
+    left: `${x}px`,
+    top: `${y}px`,
     width: `${width}px`,
     height: `${height}px`,
-    transform: `translate(${x}px, ${y}px) rotate(${rotation}deg)`,
+    transform: `rotate(${rotation}deg)`,
     transformOrigin: 'center center',
     zIndex: props.image.zIndex,
   }
 })
 
-const innerImageStyle = computed(() => {
-  const border = props.image.border
+const filterStyle = computed(() => {
+  const p = props.image.filterParams
+  const filters: string[] = []
+
+  if (p.brightness !== 100) {
+    filters.push(`brightness(${p.brightness}%)`)
+  }
+  if (p.contrast !== 100) {
+    filters.push(`contrast(${p.contrast}%)`)
+  }
+  if (p.saturate !== 100) {
+    filters.push(`saturate(${p.saturate}%)`)
+  }
+  if (p.sepia !== 0) {
+    filters.push(`sepia(${p.sepia}%)`)
+  }
+  if (p.hueRotate !== 0) {
+    filters.push(`hue-rotate(${p.hueRotate}deg)`)
+  }
+
+  return filters.length > 0 ? filters.join(' ') : 'none'
+})
+
+const temperatureOverlay = computed(() => {
+  const temp = props.image.filterParams.temperature
+  if (temp === 0) return null
+  const opacity = Math.abs(temp) / 200
+  const color = temp > 0 ? 'rgba(255, 150, 50,' : 'rgba(50, 100, 255,'
+  return `${color}${opacity})`
+})
+
+const grainOpacity = computed(() => {
+  return props.image.filterParams.grain / 150
+})
+
+const cropStyle = computed(() => {
   const crop = props.image.crop
+  if (!crop) return {}
 
-  const styles: Record<string, string> = {}
+  const scaleX = 1 / crop.width
+  const scaleY = 1 / crop.height
+  const translateX = -crop.x * 100 * scaleX
+  const translateY = -crop.y * 100 * scaleY
 
-  if (crop) {
-    const cropX = (crop.x / props.image.originalWidth) * 100
-    const cropY = (crop.y / props.image.originalHeight) * 100
-    const cropWidth = (crop.width / props.image.originalWidth) * 100
-    const cropHeight = (crop.height / props.image.originalHeight) * 100
-    styles.objectPosition = `${-cropX}% ${-cropY}%`
-    styles.objectFit = 'cover'
-    styles.width = `${100 / (cropWidth / 100)}%`
-    styles.height = `${100 / (cropHeight / 100)}%`
-    styles.transform = `translate(${cropX}%, ${cropY}%)`
+  return {
+    transform: `scale(${scaleX}, ${scaleY}) translate(${translateX / scaleX}%, ${translateY / scaleY}%)`,
+    transformOrigin: 'top left',
+    width: `${100 / crop.width}%`,
+    height: `${100 / crop.height}%`,
   }
-
-  if (border) {
-    styles.borderRadius = `${border.borderRadius}px`
-  }
-
-  return styles
 })
 
 const borderStyle = computed(() => {
@@ -82,12 +108,19 @@ const borderStyle = computed(() => {
   if (!border) return {}
 
   const styles: Record<string, string> = {}
-  styles.border = `${border.width}px solid ${border.color}`
-  styles.borderRadius = `${border.borderRadius}px`
+  const borderWidthPx = mmToPx(border.width, props.dpi)
+  const borderRadiusPx = mmToPx(border.borderRadius, props.dpi)
+
+  styles.border = `${borderWidthPx}px solid ${border.color}`
+  styles.borderRadius = `${borderRadiusPx}px`
 
   if (border.shadow) {
     const { offsetX, offsetY, blur, color, opacity } = border.shadow
-    styles.boxShadow = `${offsetX}px ${offsetY}px ${blur}px ${color}${Math.round(opacity * 255).toString(16).padStart(2, '0')}`
+    const ox = mmToPx(offsetX, props.dpi)
+    const oy = mmToPx(offsetY, props.dpi)
+    const b = mmToPx(blur, props.dpi)
+    const alpha = Math.round(opacity * 255).toString(16).padStart(2, '0')
+    styles.boxShadow = `${ox}px ${oy}px ${b}px ${color}${alpha}`
   }
 
   return styles
@@ -107,13 +140,13 @@ const controlPoints = [
 function onMouseDown(e: MouseEvent, handleType: string) {
   e.preventDefault()
   e.stopPropagation()
-  emit('dragStart', props.image.id, handleType)
+  emit('dragStart', e, handleType)
 }
 
 function onTouchStart(e: TouchEvent, handleType: string) {
   e.preventDefault()
   e.stopPropagation()
-  emit('dragStart', props.image.id, handleType)
+  emit('dragStart', e, handleType)
 }
 
 function onClick(e: MouseEvent) {
@@ -123,7 +156,17 @@ function onClick(e: MouseEvent) {
 
 function onDoubleClick(e: MouseEvent) {
   e.stopPropagation()
-  emit('doubleClick', props.image.id)
+  emit('doubleClick', e)
+}
+
+function handleImageLoad() {
+  imageLoaded.value = true
+  imageError.value = false
+}
+
+function handleImageError() {
+  imageLoaded.value = false
+  imageError.value = true
 }
 </script>
 
@@ -142,20 +185,34 @@ function onDoubleClick(e: MouseEvent) {
     @touchstart="onTouchStart($event, 'move')"
   >
     <div class="image-content" :style="borderStyle">
-      <div v-if="!image.src" class="image-placeholder">
+      <div v-if="!image.src || imageError" class="image-placeholder">
         <Upload :size="32" class="placeholder-icon" />
         <span class="placeholder-text">{{ image.name }}</span>
       </div>
 
-      <canvas
-        v-else
-        ref="canvasRef"
-        class="image-canvas"
-        :style="innerImageStyle"
-      />
+      <div v-else class="image-wrapper">
+        <img
+          ref="imgRef"
+          :src="image.src"
+          :alt="image.name"
+          class="image-img"
+          :style="{ ...cropStyle, filter: filterStyle }"
+          @load="handleImageLoad"
+          @error="handleImageError"
+          draggable="false"
+        />
 
-      <div v-if="isProcessing" class="processing-overlay">
-        <div class="processing-spinner"></div>
+        <div
+          v-if="temperatureOverlay"
+          class="temperature-overlay"
+          :style="{ backgroundColor: temperatureOverlay }"
+        />
+
+        <div
+          v-if="grainOpacity > 0"
+          class="grain-overlay"
+          :style="{ opacity: grainOpacity }"
+        />
       </div>
     </div>
 
@@ -197,15 +254,11 @@ function onDoubleClick(e: MouseEvent) {
   position: absolute;
   box-sizing: border-box;
   user-select: none;
-  transition: transform 0.1s ease;
+  transition: box-shadow 0.2s ease;
 }
 
 .image-item:hover:not(.is-cropping) {
   z-index: 9999 !important;
-}
-
-.image-item:hover .image-content {
-  transform: scale(1.01);
 }
 
 .image-content {
@@ -214,7 +267,52 @@ function onDoubleClick(e: MouseEvent) {
   height: 100%;
   overflow: hidden;
   background: var(--bg-secondary);
-  transition: transform 0.2s ease;
+  box-sizing: border-box;
+}
+
+.image-wrapper {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.image-img {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.temperature-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  mix-blend-mode: soft-light;
+}
+
+.grain-overlay {
+  position: absolute;
+  inset: -50%;
+  width: 200%;
+  height: 200%;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-size: 128px 128px;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+  animation: grain-move 2s steps(10) infinite;
+}
+
+@keyframes grain-move {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-10%, -10%); }
+  50% { transform: translate(5%, -15%); }
+  75% { transform: translate(-5%, 10%); }
 }
 
 .image-item.is-selected .image-content::after {
@@ -248,35 +346,6 @@ function onDoubleClick(e: MouseEvent) {
   font-size: 0.75rem;
   color: var(--text-secondary);
   opacity: 0.7;
-}
-
-.image-canvas {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-
-.processing-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 20;
-}
-
-.processing-spinner {
-  width: 24px;
-  height: 24px;
-  border: 2px solid var(--accent);
-  border-top-color: transparent;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
 }
 
 .control-point {
