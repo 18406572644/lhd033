@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { RotateCcw, Save, Download, ImagePlus } from 'lucide-vue-next'
+import { RotateCcw, Save, Download, ImagePlus, Undo2, Redo2 } from 'lucide-vue-next'
 import { useEditorStore } from '@/stores/editor'
 import { useGalleryStore } from '@/stores/gallery'
 import { useExport } from '@/composables/useExport'
@@ -10,6 +10,7 @@ import ImageUploader from '@/components/ImageUploader.vue'
 import PreviewCanvas from '@/components/PreviewCanvas.vue'
 import PresetSlider from '@/components/PresetSlider.vue'
 import ParamControl from '@/components/ParamControl.vue'
+import HistoryPanel from '@/components/HistoryPanel.vue'
 import SaveSchemeDialog from '@/components/SaveSchemeDialog.vue'
 import type { FilmPreset } from '@/types'
 
@@ -25,7 +26,29 @@ const presets = ref<FilmPreset[]>([])
 onMounted(async () => {
   presets.value = await fetchPresets()
   galleryStore.loadSchemes()
+  window.addEventListener('keydown', handleKeydown)
 })
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown)
+})
+
+function handleKeydown(e: KeyboardEvent) {
+  if (!editorStore.hasImage) return
+
+  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0
+  const ctrlKey = isMac ? e.metaKey : e.ctrlKey
+
+  if (ctrlKey && !e.shiftKey && e.key.toLowerCase() === 'z') {
+    e.preventDefault()
+    editorStore.undo()
+  }
+
+  if (ctrlKey && (e.key.toLowerCase() === 'y' || (e.shiftKey && e.key.toLowerCase() === 'z'))) {
+    e.preventDefault()
+    editorStore.redo()
+  }
+}
 
 const activePresetName = computed(() => {
   if (!editorStore.activePresetId) return null
@@ -66,10 +89,7 @@ function changeImage() {
 }
 
 function loadScheme(scheme: { params: any; presetId?: string }) {
-  editorStore.setParams(scheme.params)
-  if (scheme.presetId) {
-    editorStore.applyPreset(scheme.presetId, scheme.params)
-  }
+  editorStore.loadScheme(scheme.params, scheme.presetId)
 }
 </script>
 
@@ -97,6 +117,8 @@ function loadScheme(scheme: { params: any; presetId?: string }) {
         <PresetSlider />
 
         <ParamControl />
+
+        <HistoryPanel />
 
         <div class="editor-actions">
           <button

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useEditorStore } from '@/stores/editor'
 import type { FilterParams } from '@/types'
 import { DEFAULT_PARAMS } from '@/api/mock'
@@ -8,6 +8,8 @@ import {
   Contrast,
   Thermometer,
   Sparkles,
+  Dices,
+  Settings,
 } from 'lucide-vue-next'
 
 const editorStore = useEditorStore()
@@ -30,6 +32,10 @@ const paramConfigs: ParamConfig[] = [
   { key: 'grain', label: '颗粒感', min: 0, max: 100, step: 1, icon: Sparkles, unit: '', defaultValue: DEFAULT_PARAMS.grain },
 ]
 
+const randomRange = ref(30)
+const showRangeSlider = ref(false)
+const isRolling = ref(false)
+
 function getSliderBackground(key: keyof FilterParams, value: number, config: ParamConfig) {
   const pct = ((value - config.min) / (config.max - config.min)) * 100
   return `linear-gradient(to right, var(--accent) 0%, var(--accent) ${pct}%, var(--bg-secondary) ${pct}%, var(--bg-secondary) 100%)`
@@ -40,25 +46,80 @@ function isDefault(key: keyof FilterParams) {
 }
 
 function resetParam(key: keyof FilterParams) {
-  editorStore.updateParam(key, DEFAULT_PARAMS[key])
+  editorStore.commitParamChange(key, DEFAULT_PARAMS[key])
+}
+
+function onParamInput(key: keyof FilterParams, value: number) {
+  editorStore.updateParam(key, value)
+}
+
+function onParamChange(key: keyof FilterParams, value: number) {
+  editorStore.commitParamChange(key, value)
 }
 
 const hasChanges = computed(() => {
   return paramConfigs.some(c => editorStore.params[c.key] !== c.defaultValue)
 })
+
+function onRandomize() {
+  if (!editorStore.hasImage) return
+  isRolling.value = true
+  editorStore.randomizeParams(randomRange.value)
+  setTimeout(() => {
+    isRolling.value = false
+  }, 300)
+}
+
+function toggleRangeSlider() {
+  showRangeSlider.value = !showRangeSlider.value
+}
 </script>
 
 <template>
   <div class="param-panel">
     <div class="param-header">
       <span class="param-title">参数调节</span>
-      <button
-        v-if="hasChanges"
-        class="param-reset"
-        @click="editorStore.resetParams()"
-      >
-        全部重置
-      </button>
+      <div class="param-header-actions">
+        <button
+          class="dice-btn"
+          :class="{ 'dice-btn--rolling': isRolling, 'dice-btn--disabled': !editorStore.hasImage }"
+          :disabled="!editorStore.hasImage"
+          @click="onRandomize"
+          title="随机调色"
+        >
+          <Dices :size="16" :class="{ 'dice-icon': isRolling }" />
+        </button>
+        <button
+          class="range-setting-btn"
+          :class="{ 'range-setting-btn--active': showRangeSlider }"
+          @click="toggleRangeSlider"
+          title="设置随机范围"
+        >
+          <Settings :size="14" />
+        </button>
+        <button
+          v-if="hasChanges"
+          class="param-reset"
+          @click="editorStore.resetParams()"
+        >
+          全部重置
+        </button>
+      </div>
+    </div>
+
+    <div v-if="showRangeSlider" class="random-range-panel">
+      <div class="range-label">
+        <span>随机范围</span>
+        <span class="range-value">{{ randomRange }}%</span>
+      </div>
+      <input
+        type="range"
+        min="5"
+        max="100"
+        step="5"
+        v-model.number="randomRange"
+        class="range-slider"
+      />
     </div>
 
     <div class="param-list">
@@ -94,7 +155,8 @@ const hasChanges = computed(() => {
           :value="editorStore.params[config.key]"
           class="param-slider"
           :style="{ background: getSliderBackground(config.key, editorStore.params[config.key], config) }"
-          @input="(e: Event) => editorStore.updateParam(config.key, Number((e.target as HTMLInputElement).value))"
+          @input="(e: Event) => onParamInput(config.key, Number((e.target as HTMLInputElement).value))"
+          @change="(e: Event) => onParamChange(config.key, Number((e.target as HTMLInputElement).value))"
         />
       </div>
     </div>
@@ -117,11 +179,123 @@ const hasChanges = computed(() => {
   border-bottom: 1px solid var(--border-color);
 }
 
+.param-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .param-title {
   font-family: 'Playfair Display', serif;
   font-size: 0.95rem;
   font-weight: 600;
   color: var(--text-primary);
+}
+
+.dice-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(212, 168, 83, 0.1);
+  border: 1px solid rgba(212, 168, 83, 0.3);
+  color: var(--accent);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dice-btn:hover:not(:disabled) {
+  background: var(--accent);
+  color: #1A1614;
+  transform: scale(1.05);
+}
+
+.dice-btn--rolling .dice-icon {
+  animation: dice-roll 0.3s ease-in-out;
+}
+
+@keyframes dice-roll {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.2); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+.dice-btn--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.range-setting-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.range-setting-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+}
+
+.range-setting-btn--active {
+  color: var(--accent);
+}
+
+.random-range-panel {
+  padding: 10px 16px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.range-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+.range-value {
+  font-weight: 600;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.range-slider {
+  width: 100%;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--bg-card);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+.range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease;
+}
+
+.range-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
 }
 
 .param-reset {
