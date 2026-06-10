@@ -154,7 +154,7 @@ function toggleRangeSlider() {
           :step="config.step"
           :value="editorStore.params[config.key]"
           class="param-slider"
-          :style="{ background: getSliderBackground(config.key, editorStore.params[config.key], config) }"
+          :style="{ background: getSliderBackground(config.key, editorStore.params[config.key] as number, config) }"
           @input="(e: Event) => onParamInput(config.key, Number((e.target as HTMLInputElement).value))"
           @change="(e: Event) => onParamChange(config.key, Number((e.target as HTMLInputElement).value))"
         />

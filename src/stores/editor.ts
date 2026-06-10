@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { FilterParams } from '@/types'
+import type { FilterParams, RGBCurves } from '@/types'
 import { DEFAULT_PARAMS } from '@/api/mock'
 
 interface HistoryItem {
@@ -128,6 +128,15 @@ export const useEditorStore = defineStore('editor', () => {
       saturate: '饱和度',
       sepia: '复古',
       hueRotate: '色相',
+      shadows: '阴影',
+      highlights: '高光',
+      clarity: '清晰度',
+      vignette: '暗角',
+      splitToneShadowHue: '色调分离-阴影色相',
+      splitToneShadowSat: '色调分离-阴影饱和度',
+      splitToneHighlightHue: '色调分离-高光色相',
+      splitToneHighlightSat: '色调分离-高光饱和度',
+      rgbCurves: 'RGB曲线',
     }
     return labels[key] || key
   }
@@ -146,6 +155,33 @@ export const useEditorStore = defineStore('editor', () => {
       activePresetId.value = null
     }
     pushHistory('加载方案')
+  }
+
+  function updateRGBCurve(channel: 'r' | 'g' | 'b', points: { x: number; y: number }[]) {
+    const curves = { ...params.value.rgbCurves }
+    curves[channel] = points.map(p => ({ x: p.x, y: p.y }))
+    params.value = { ...params.value, rgbCurves: curves }
+  }
+
+  function commitRGBCurveChange(channel: 'r' | 'g' | 'b', points: { x: number; y: number }[]) {
+    updateRGBCurve(channel, points)
+    pushHistory(`调整${channel.toUpperCase()}曲线`)
+  }
+
+  function resetAdvancedParams() {
+    params.value = {
+      ...params.value,
+      shadows: 0,
+      highlights: 0,
+      clarity: 0,
+      vignette: 0,
+      splitToneShadowHue: 0,
+      splitToneShadowSat: 0,
+      splitToneHighlightHue: 0,
+      splitToneHighlightSat: 0,
+      rgbCurves: { r: [{ x: 0, y: 0 }, { x: 128, y: 128 }, { x: 255, y: 255 }], g: [{ x: 0, y: 0 }, { x: 128, y: 128 }, { x: 255, y: 255 }], b: [{ x: 0, y: 0 }, { x: 128, y: 128 }, { x: 255, y: 255 }] },
+    }
+    pushHistory('重置高级参数')
   }
 
   function resetParams() {
@@ -169,11 +205,13 @@ export const useEditorStore = defineStore('editor', () => {
     const keys = Object.keys(DEFAULT_PARAMS) as (keyof FilterParams)[]
 
     keys.forEach((key) => {
-      const baseValue = DEFAULT_PARAMS[key]
+      if (key === 'rgbCurves') return
+
+      const baseValue = DEFAULT_PARAMS[key] as number
       const range = baseValue * (rangePercent / 100)
       let randomValue = baseValue + (Math.random() - 0.5) * 2 * range
 
-      if (key === 'temperature' || key === 'hueRotate') {
+      if (key === 'temperature' || key === 'hueRotate' || key === 'shadows' || key === 'highlights' || key === 'clarity') {
         const absRange = Math.abs(range)
         randomValue = (Math.random() - 0.5) * 2 * absRange
       }
@@ -182,7 +220,7 @@ export const useEditorStore = defineStore('editor', () => {
       randomValue = Math.max(minMax.min, Math.min(minMax.max, randomValue))
       randomValue = Math.round(randomValue)
 
-      newParams[key] = randomValue as FilterParams[typeof key]
+      ;(newParams as any)[key] = randomValue
     })
 
     params.value = newParams
@@ -199,6 +237,15 @@ export const useEditorStore = defineStore('editor', () => {
       saturate: { min: 0, max: 200 },
       sepia: { min: 0, max: 100 },
       hueRotate: { min: -180, max: 180 },
+      shadows: { min: -100, max: 100 },
+      highlights: { min: -100, max: 100 },
+      clarity: { min: -100, max: 100 },
+      vignette: { min: 0, max: 100 },
+      splitToneShadowHue: { min: 0, max: 360 },
+      splitToneShadowSat: { min: 0, max: 100 },
+      splitToneHighlightHue: { min: 0, max: 360 },
+      splitToneHighlightSat: { min: 0, max: 100 },
+      rgbCurves: { min: 0, max: 255 },
     }
     return ranges[key]
   }
@@ -227,5 +274,8 @@ export const useEditorStore = defineStore('editor', () => {
     redo,
     goToHistory,
     randomizeParams,
+    updateRGBCurve,
+    commitRGBCurveChange,
+    resetAdvancedParams,
   }
 })

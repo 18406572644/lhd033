@@ -267,7 +267,11 @@ function isFilterDefault(key: keyof FilterParams) {
 const hasFilterChanges = computed(() => {
   if (!selectedImage.value) return false
   return Object.entries(DEFAULT_FILTER_PARAMS).some(
-    ([key, value]) => selectedImage.value!.filterParams[key as keyof FilterParams] !== value,
+    ([key, value]) => {
+      const current = selectedImage.value!.filterParams[key as keyof FilterParams]
+      if (typeof value === 'object') return JSON.stringify(current) !== JSON.stringify(value)
+      return current !== value
+    },
   )
 })
 
@@ -677,8 +681,8 @@ watch(
                   :step="config.step"
                   :value="selectedImage.filterParams[config.key]"
                   class="param-slider"
-                  :style="{ background: getSliderBackground(selectedImage.filterParams[config.key], config.min, config.max) }"
-                  @input="(e: Event) => (selectedImage.filterParams[config.key] = Number((e.target as HTMLInputElement).value))"
+                  :style="{ background: getSliderBackground(selectedImage.filterParams[config.key] as number, config.min, config.max) }"
+                  @input="(e: Event) => (selectedImage.filterParams[config.key] = Number((e.target as HTMLInputElement).value) as any)"
                   @change="(e: Event) => updateFilter(config.key, Number((e.target as HTMLInputElement).value))"
                 />
               </div>

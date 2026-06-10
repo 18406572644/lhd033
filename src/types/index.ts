@@ -1,3 +1,14 @@
+export interface CurvePoint {
+  x: number
+  y: number
+}
+
+export interface RGBCurves {
+  r: CurvePoint[]
+  g: CurvePoint[]
+  b: CurvePoint[]
+}
+
 export interface FilterParams {
   brightness: number
   contrast: number
@@ -6,6 +17,15 @@ export interface FilterParams {
   saturate: number
   sepia: number
   hueRotate: number
+  shadows: number
+  highlights: number
+  clarity: number
+  vignette: number
+  splitToneShadowHue: number
+  splitToneShadowSat: number
+  splitToneHighlightHue: number
+  splitToneHighlightSat: number
+  rgbCurves: RGBCurves
 }
 
 export interface FilmPreset {
@@ -156,6 +176,12 @@ export interface GuideLine {
   source: 'margin' | 'center' | 'image'
 }
 
+export const DEFAULT_RGB_CURVES: RGBCurves = {
+  r: [{ x: 0, y: 0 }, { x: 128, y: 128 }, { x: 255, y: 255 }],
+  g: [{ x: 0, y: 0 }, { x: 128, y: 128 }, { x: 255, y: 255 }],
+  b: [{ x: 0, y: 0 }, { x: 128, y: 128 }, { x: 255, y: 255 }],
+}
+
 export const DEFAULT_FILTER_PARAMS: FilterParams = {
   brightness: 100,
   contrast: 100,
@@ -164,6 +190,15 @@ export const DEFAULT_FILTER_PARAMS: FilterParams = {
   saturate: 100,
   sepia: 0,
   hueRotate: 0,
+  shadows: 0,
+  highlights: 0,
+  clarity: 0,
+  vignette: 0,
+  splitToneShadowHue: 0,
+  splitToneShadowSat: 0,
+  splitToneHighlightHue: 0,
+  splitToneHighlightSat: 0,
+  rgbCurves: { r: [{ x: 0, y: 0 }, { x: 128, y: 128 }, { x: 255, y: 255 }], g: [{ x: 0, y: 0 }, { x: 128, y: 128 }, { x: 255, y: 255 }], b: [{ x: 0, y: 0 }, { x: 128, y: 128 }, { x: 255, y: 255 }] },
 }
 
 export const PAPER_SIZES: PaperSize[] = [

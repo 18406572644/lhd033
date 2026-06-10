@@ -9,6 +9,10 @@ import { DEFAULT_FILTER_PARAMS } from '@/types'
 
 export const DEFAULT_PARAMS: FilterParams = DEFAULT_FILTER_PARAMS
 
+function withDefaults(overrides: Partial<FilterParams>): FilterParams {
+  return { ...DEFAULT_FILTER_PARAMS, ...overrides }
+}
+
 export const PAPER_SIZES: PaperSize[] = [
   { id: 'a4', name: 'A4', width: 210, height: 297 },
   { id: 'a3', name: 'A3', width: 297, height: 420 },
@@ -155,7 +159,7 @@ export const FILM_PRESETS: FilmPreset[] = [
     brand: 'Kodak',
     description: '柔和肤色，细腻颗粒，暖调人像首选',
     thumbnail: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=soft%20warm%20portrait%20film%20grain%20golden%20hour%20skin%20tones&image_size=square',
-    params: { brightness: 105, contrast: 95, temperature: 15, grain: 18, saturate: 90, sepia: 8, hueRotate: -2 },
+    params: withDefaults({ brightness: 105, contrast: 95, temperature: 15, grain: 18, saturate: 90, sepia: 8, hueRotate: -2 }),
   },
   {
     id: 'kodak-gold-200',
@@ -163,7 +167,7 @@ export const FILM_PRESETS: FilmPreset[] = [
     brand: 'Kodak',
     description: '浓郁暖黄，日常胶卷之王，色彩饱满',
     thumbnail: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=warm%20golden%20sunset%20vibrant%20colors%20film%20photography&image_size=square',
-    params: { brightness: 108, contrast: 105, temperature: 25, grain: 22, saturate: 115, sepia: 12, hueRotate: -5 },
+    params: withDefaults({ brightness: 108, contrast: 105, temperature: 25, grain: 22, saturate: 115, sepia: 12, hueRotate: -5 }),
   },
   {
     id: 'fujifilm-superia-400',
@@ -171,7 +175,7 @@ export const FILM_PRESETS: FilmPreset[] = [
     brand: 'Fujifilm',
     description: '偏绿冷调，街拍经典，日系色彩',
     thumbnail: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=cool%20green%20tint%20street%20photography%20japanese%20film%20style&image_size=square',
-    params: { brightness: 102, contrast: 98, temperature: -10, grain: 20, saturate: 95, sepia: 3, hueRotate: 5 },
+    params: withDefaults({ brightness: 102, contrast: 98, temperature: -10, grain: 20, saturate: 95, sepia: 3, hueRotate: 5 }),
   },
   {
     id: 'fujifilm-pro400h',
@@ -179,7 +183,7 @@ export const FILM_PRESETS: FilmPreset[] = [
     brand: 'Fujifilm',
     description: '柔和高光，浅蓝偏色，婚纱摄影最爱',
     thumbnail: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=pastel%20soft%20blue%20wedding%20film%20delicate%20highlight&image_size=square',
-    params: { brightness: 110, contrast: 90, temperature: -5, grain: 12, saturate: 85, sepia: 2, hueRotate: 3 },
+    params: withDefaults({ brightness: 110, contrast: 90, temperature: -5, grain: 12, saturate: 85, sepia: 2, hueRotate: 3 }),
   },
   {
     id: 'ilford-hp5',
@@ -187,7 +191,7 @@ export const FILM_PRESETS: FilmPreset[] = [
     brand: 'Ilford',
     description: '经典黑白，粗犷颗粒，纪实摄影灵魂',
     thumbnail: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=black%20white%20grainy%20documentary%20film%20noir%20contrast&image_size=square',
-    params: { brightness: 100, contrast: 120, temperature: 0, grain: 35, saturate: 0, sepia: 0, hueRotate: 0 },
+    params: withDefaults({ brightness: 100, contrast: 120, temperature: 0, grain: 35, saturate: 0, sepia: 0, hueRotate: 0 }),
   },
   {
     id: 'kodak-tri-x',
@@ -195,7 +199,7 @@ export const FILM_PRESETS: FilmPreset[] = [
     brand: 'Kodak',
     description: '传奇黑白胶卷，高对比，标志性颗粒',
     thumbnail: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=iconic%20black%20white%20high%20contrast%20grain%20street%20photography&image_size=square',
-    params: { brightness: 95, contrast: 130, temperature: 0, grain: 40, saturate: 0, sepia: 5, hueRotate: 0 },
+    params: withDefaults({ brightness: 95, contrast: 130, temperature: 0, grain: 40, saturate: 0, sepia: 5, hueRotate: 0 }),
   },
   {
     id: 'cinestill-800t',
@@ -203,7 +207,7 @@ export const FILM_PRESETS: FilmPreset[] = [
     brand: 'CineStill',
     description: '电影感夜景，钨丝灯偏蓝，霓虹梦幻',
     thumbnail: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=cinematic%20neon%20night%20tungsten%20blue%20halation%20dreamy&image_size=square',
-    params: { brightness: 95, contrast: 110, temperature: -30, grain: 25, saturate: 110, sepia: 0, hueRotate: 8 },
+    params: withDefaults({ brightness: 95, contrast: 110, temperature: -30, grain: 25, saturate: 110, sepia: 0, hueRotate: 8 }),
   },
   {
     id: 'kodak-ektar-100',
@@ -211,7 +215,7 @@ export const FILM_PRESETS: FilmPreset[] = [
     brand: 'Kodak',
     description: '超饱和色彩，风光利器，红蓝极致',
     thumbnail: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=vibrant%20saturated%20landscape%20red%20blue%20ultra%20color%20film&image_size=square',
-    params: { brightness: 100, contrast: 115, temperature: 10, grain: 8, saturate: 135, sepia: 0, hueRotate: -3 },
+    params: withDefaults({ brightness: 100, contrast: 115, temperature: 10, grain: 8, saturate: 135, sepia: 0, hueRotate: -3 }),
   },
 ]
 
@@ -222,7 +226,7 @@ export const FILM_CASES: FilmCase[] = [
     style: '婚礼人像',
     description: 'Portra 400 柔和的肤色还原与细腻颗粒，是婚礼摄影师的不二之选。暖调偏色带来天然的好气色，高光柔和不刺眼。',
     image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=wedding%20bride%20soft%20warm%20light%20portra%20film%20grain%20romantic&image_size=landscape_4_3',
-    params: { brightness: 105, contrast: 92, temperature: 18, grain: 16, saturate: 88, sepia: 10, hueRotate: -2 },
+    params: withDefaults({ brightness: 105, contrast: 92, temperature: 18, grain: 16, saturate: 88, sepia: 10, hueRotate: -2 }),
   },
   {
     id: 'case-trix-street',
@@ -230,7 +234,7 @@ export const FILM_CASES: FilmCase[] = [
     style: '街头纪实',
     description: 'Tri-X 的高对比度与粗犷颗粒赋予街头摄影戏剧性张力，黑白影调下的城市光影更富故事感。',
     image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=street%20photography%20black%20white%20high%20contrast%20urban%20shadow%20dramatic&image_size=landscape_4_3',
-    params: { brightness: 92, contrast: 135, temperature: 0, grain: 45, saturate: 0, sepia: 5, hueRotate: 0 },
+    params: withDefaults({ brightness: 92, contrast: 135, temperature: 0, grain: 45, saturate: 0, sepia: 5, hueRotate: 0 }),
   },
   {
     id: 'case-800t-neon',
@@ -238,7 +242,7 @@ export const FILM_CASES: FilmCase[] = [
     style: '霓虹夜景',
     description: '800T 的钨丝灯白平衡让城市夜景泛出梦幻蓝调，红光晕染（halation）效果让霓虹灯如梦似幻。',
     image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=neon%20city%20night%20blue%20tungsten%20cinematic%20halation%20glow%20dreamy&image_size=landscape_4_3',
-    params: { brightness: 92, contrast: 108, temperature: -35, grain: 28, saturate: 115, sepia: 0, hueRotate: 10 },
+    params: withDefaults({ brightness: 92, contrast: 108, temperature: -35, grain: 28, saturate: 115, sepia: 0, hueRotate: 10 }),
   },
   {
     id: 'case-pro400h-garden',
@@ -246,7 +250,7 @@ export const FILM_CASES: FilmCase[] = [
     style: '花园写真',
     description: 'Pro 400H 浅蓝偏色配合柔和色调，在户外花园场景中呈现日系清新质感，高光过渡如水彩渲染。',
     image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=garden%20portrait%20pastel%20soft%20blue%20flower%20japanese%20film%20ethereal&image_size=landscape_4_3',
-    params: { brightness: 112, contrast: 88, temperature: -8, grain: 10, saturate: 82, sepia: 2, hueRotate: 4 },
+    params: withDefaults({ brightness: 112, contrast: 88, temperature: -8, grain: 10, saturate: 82, sepia: 2, hueRotate: 4 }),
   },
   {
     id: 'case-ektar-landscape',
@@ -254,7 +258,7 @@ export const FILM_CASES: FilmCase[] = [
     style: '风光大片',
     description: 'Ektar 100 的极致饱和度让天空更蓝、草地更绿、落日更红，是风光摄影的终极武器。',
     image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=vivid%20landscape%20mountain%20sunset%20ultra%20saturated%20blue%20sky%20film&image_size=landscape_4_3',
-    params: { brightness: 100, contrast: 118, temperature: 12, grain: 6, saturate: 140, sepia: 0, hueRotate: -4 },
+    params: withDefaults({ brightness: 100, contrast: 118, temperature: 12, grain: 6, saturate: 140, sepia: 0, hueRotate: -4 }),
   },
   {
     id: 'case-hp5-documentary',
@@ -262,6 +266,6 @@ export const FILM_CASES: FilmCase[] = [
     style: '人文纪实',
     description: 'HP5 Plus 在弱光下依然出色，灰阶过渡丰富，颗粒自然不造作，适合记录真实的人文瞬间。',
     image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=documentary%20people%20black%20white%20natural%20grain%20low%20light%20authentic&image_size=landscape_4_3',
-    params: { brightness: 98, contrast: 118, temperature: 0, grain: 32, saturate: 0, sepia: 3, hueRotate: 0 },
+    params: withDefaults({ brightness: 98, contrast: 118, temperature: 0, grain: 32, saturate: 0, sepia: 3, hueRotate: 0 }),
   },
 ]

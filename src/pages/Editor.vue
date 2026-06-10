@@ -10,6 +10,7 @@ import ImageUploader from '@/components/ImageUploader.vue'
 import PreviewCanvas from '@/components/PreviewCanvas.vue'
 import PresetSlider from '@/components/PresetSlider.vue'
 import ParamControl from '@/components/ParamControl.vue'
+import AdvancedParamPanel from '@/components/AdvancedParamPanel.vue'
 import HistoryPanel from '@/components/HistoryPanel.vue'
 import SaveSchemeDialog from '@/components/SaveSchemeDialog.vue'
 import type { FilmPreset } from '@/types'
@@ -117,6 +118,8 @@ function loadScheme(scheme: { params: any; presetId?: string }) {
         <PresetSlider />
 
         <ParamControl />
+
+        <AdvancedParamPanel />
 
         <HistoryPanel />
 
