@@ -1,14 +1,152 @@
-import type { FilmPreset, FilmCase, FilterParams } from '@/types'
+import type {
+  FilmPreset,
+  FilmCase,
+  FilterParams,
+  LayoutTemplate,
+  PaperSize,
+} from '@/types'
+import { DEFAULT_FILTER_PARAMS } from '@/types'
 
-export const DEFAULT_PARAMS: FilterParams = {
-  brightness: 100,
-  contrast: 100,
-  temperature: 0,
-  grain: 0,
-  saturate: 100,
-  sepia: 0,
-  hueRotate: 0,
-}
+export const DEFAULT_PARAMS: FilterParams = DEFAULT_FILTER_PARAMS
+
+export const PAPER_SIZES: PaperSize[] = [
+  { id: 'a4', name: 'A4', width: 210, height: 297 },
+  { id: 'a3', name: 'A3', width: 297, height: 420 },
+  { id: 'letter', name: 'Letter', width: 215.9, height: 279.4 },
+  { id: '6inch', name: '6 寸相纸', width: 102, height: 152 },
+  { id: '5inch', name: '5 寸相纸', width: 89, height: 127 },
+  { id: 'a5', name: 'A5', width: 148, height: 210 },
+  { id: 'b5', name: 'B5', width: 176, height: 250 },
+]
+
+export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
+  {
+    id: 'id-photo-8',
+    name: '1 寸证件照 8 张',
+    category: 'id',
+    description: 'A4 纸张，标准 1 寸证件照 8 张排版',
+    thumbnail: '',
+    paper: {
+      size: PAPER_SIZES[0],
+      orientation: 'portrait',
+      margins: { top: 10, right: 10, bottom: 10, left: 10 },
+      dpi: 300,
+    },
+    imageSlots: [
+      { x: 15, y: 15, width: 25, height: 35 },
+      { x: 50, y: 15, width: 25, height: 35 },
+      { x: 85, y: 15, width: 25, height: 35 },
+      { x: 120, y: 15, width: 25, height: 35 },
+      { x: 155, y: 15, width: 25, height: 35 },
+      { x: 15, y: 60, width: 25, height: 35 },
+      { x: 50, y: 60, width: 25, height: 35 },
+      { x: 85, y: 60, width: 25, height: 35 },
+    ],
+  },
+  {
+    id: 'id-photo-12',
+    name: '2 寸证件照 4 张',
+    category: 'id',
+    description: 'A4 纸张，标准 2 寸证件照 4 张排版',
+    thumbnail: '',
+    paper: {
+      size: PAPER_SIZES[0],
+      orientation: 'portrait',
+      margins: { top: 10, right: 10, bottom: 10, left: 10 },
+      dpi: 300,
+    },
+    imageSlots: [
+      { x: 25, y: 20, width: 35, height: 49 },
+      { x: 75, y: 20, width: 35, height: 49 },
+      { x: 125, y: 20, width: 35, height: 49 },
+      { x: 170, y: 20, width: 35, height: 49 },
+    ],
+  },
+  {
+    id: 'polaroid-4',
+    name: '拍立得 4 张 + 留言区',
+    category: 'polaroid',
+    description: 'A4 纸张，4 张拍立得风格照片，底部留言区',
+    thumbnail: '',
+    paper: {
+      size: PAPER_SIZES[0],
+      orientation: 'landscape',
+      margins: { top: 15, right: 15, bottom: 15, left: 15 },
+      dpi: 300,
+    },
+    imageSlots: [
+      { x: 20, y: 20, width: 65, height: 85, border: { width: 2, color: '#ffffff', borderRadius: 2, shadow: { offsetX: 2, offsetY: 2, blur: 3, color: '#000000', opacity: 0.3 } } },
+      { x: 95, y: 20, width: 65, height: 85, border: { width: 2, color: '#ffffff', borderRadius: 2, shadow: { offsetX: 2, offsetY: 2, blur: 3, color: '#000000', opacity: 0.3 } } },
+      { x: 170, y: 20, width: 65, height: 85, border: { width: 2, color: '#ffffff', borderRadius: 2, shadow: { offsetX: 2, offsetY: 2, blur: 3, color: '#000000', opacity: 0.3 } } },
+      { x: 245, y: 20, width: 65, height: 85, border: { width: 2, color: '#ffffff', borderRadius: 2, shadow: { offsetX: 2, offsetY: 2, blur: 3, color: '#000000', opacity: 0.3 } } },
+    ],
+  },
+  {
+    id: 'photowall-12',
+    name: 'A4 照片墙 12 张',
+    category: 'photowall',
+    description: 'A4 纸张，12 张照片网格排版',
+    thumbnail: '',
+    paper: {
+      size: PAPER_SIZES[0],
+      orientation: 'portrait',
+      margins: { top: 8, right: 8, bottom: 8, left: 8 },
+      dpi: 300,
+    },
+    imageSlots: [
+      { x: 10, y: 10, width: 58, height: 42 },
+      { x: 76, y: 10, width: 58, height: 42 },
+      { x: 142, y: 10, width: 58, height: 42 },
+      { x: 10, y: 62, width: 58, height: 42 },
+      { x: 76, y: 62, width: 58, height: 42 },
+      { x: 142, y: 62, width: 58, height: 42 },
+      { x: 10, y: 114, width: 58, height: 42 },
+      { x: 76, y: 114, width: 58, height: 42 },
+      { x: 142, y: 114, width: 58, height: 42 },
+      { x: 10, y: 166, width: 58, height: 42 },
+      { x: 76, y: 166, width: 58, height: 42 },
+      { x: 142, y: 166, width: 58, height: 42 },
+    ],
+  },
+  {
+    id: 'comparison-split',
+    name: '对比排版左右分栏',
+    category: 'comparison',
+    description: 'A4 横向，左右对比排版',
+    thumbnail: '',
+    paper: {
+      size: PAPER_SIZES[0],
+      orientation: 'landscape',
+      margins: { top: 15, right: 15, bottom: 15, left: 15 },
+      dpi: 300,
+    },
+    imageSlots: [
+      { x: 20, y: 30, width: 125, height: 180 },
+      { x: 165, y: 30, width: 125, height: 180 },
+    ],
+  },
+  {
+    id: 'polaroid-2x3',
+    name: '拍立得 6 张',
+    category: 'polaroid',
+    description: 'A4 纵向，6 张拍立得风格照片',
+    thumbnail: '',
+    paper: {
+      size: PAPER_SIZES[0],
+      orientation: 'portrait',
+      margins: { top: 15, right: 15, bottom: 15, left: 15 },
+      dpi: 300,
+    },
+    imageSlots: [
+      { x: 20, y: 20, width: 60, height: 75, border: { width: 3, color: '#ffffff', borderRadius: 2, shadow: { offsetX: 2, offsetY: 2, blur: 4, color: '#000000', opacity: 0.25 } } },
+      { x: 90, y: 20, width: 60, height: 75, border: { width: 3, color: '#ffffff', borderRadius: 2, shadow: { offsetX: 2, offsetY: 2, blur: 4, color: '#000000', opacity: 0.25 } } },
+      { x: 160, y: 20, width: 60, height: 75, border: { width: 3, color: '#ffffff', borderRadius: 2, shadow: { offsetX: 2, offsetY: 2, blur: 4, color: '#000000', opacity: 0.25 } } },
+      { x: 20, y: 115, width: 60, height: 75, border: { width: 3, color: '#ffffff', borderRadius: 2, shadow: { offsetX: 2, offsetY: 2, blur: 4, color: '#000000', opacity: 0.25 } } },
+      { x: 90, y: 115, width: 60, height: 75, border: { width: 3, color: '#ffffff', borderRadius: 2, shadow: { offsetX: 2, offsetY: 2, blur: 4, color: '#000000', opacity: 0.25 } } },
+      { x: 160, y: 115, width: 60, height: 75, border: { width: 3, color: '#ffffff', borderRadius: 2, shadow: { offsetX: 2, offsetY: 2, blur: 4, color: '#000000', opacity: 0.25 } } },
+    ],
+  },
+]
 
 export const FILM_PRESETS: FilmPreset[] = [
   {

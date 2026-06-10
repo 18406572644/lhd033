@@ -32,6 +32,14 @@ const route = useRoute()
         >
           案例库
         </router-link>
+        <router-link
+          to="/print-layout"
+          class="nav-link"
+          :class="{ active: route.path === '/print-layout' }"
+        >
+          <LayoutGrid :size="14" class="inline-block mr-1" />
+          打印排版
+        </router-link>
       </div>
 
       <div class="nav-actions">
